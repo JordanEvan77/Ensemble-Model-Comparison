@@ -1,0 +1,113 @@
+import random
+import math
+import numpy as np
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.ensemble import BaggingClassifier
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.ensemble import RandomForestClassifier
+from xgboost import XGBClassifier
+
+random.seed(314)
+
+N = 1000
+
+X = np.empty(shape=(N,2))
+Y = np.empty(shape=(N,1))
+
+for i in range(N):
+   theta = random.uniform(-3.14,3.14)
+   r = random.uniform(0,1)
+   X[i][0] = r*math.cos(theta)
+   X[i][1] = r*math.sin(theta)
+   if r<0.5:
+       Y[i] = -1
+   else:
+       Y[i] = 1
+
+
+X_train = X[:750]
+X_test = X[750:]
+
+y_train = Y[:750]
+y_test = Y[750:]
+
+#Now that we have the data, build a decision tree:
+clf = DecisionTreeClassifier()
+clf = clf.fit(X_train, y_train)
+pred1 = clf.predict(X_test)
+
+
+print(confusion_matrix(y_test, pred1))
+print(classification_report(y_test, pred1))
+#[[124   5]
+# [  4 117]]
+#              precision    recall  f1-score   support
+#        -1.0       0.97      0.96      0.96       129
+#         1.0       0.96      0.97      0.96       121
+#    accuracy                           0.96       250
+#   macro avg       0.96      0.96      0.96       250
+#weighted avg       0.96      0.96      0.96       250
+
+#
+#
+
+clf2 = DecisionTreeClassifier(max_depth=1)
+clf2 = clf.fit(X_train, y_train)
+pred2 = clf.predict(X_test)
+
+
+print(confusion_matrix(y_test, pred2))
+print(classification_report(y_test, pred2))
+
+#BAGGING CLASSIFIER USING CLF 2:
+est_list = [10, 25, 50, 100, 200]
+
+
+for i in est_list:
+    clf_b = BaggingClassifier(base_estimator=DecisionTreeClassifier(max_depth=1),n_estimators=i,
+                            max_features=2, random_state=314)
+    clf_b.fit(X_train, y_train.ravel())
+    pred_b = clf_b.predict(X_test)
+    print(confusion_matrix(y_test, pred_b))
+    print(classification_report(y_test, pred_b))
+
+
+#CONTINUE WITH ADABOOST with clf2:
+est_list = [10, 25, 50, 100, 200]
+
+
+for i in est_list:
+    clf_b = AdaBoostClassifier(base_estimator=DecisionTreeClassifier(max_depth=1),n_estimators=i,
+                            learning_rate=1.0, random_state=314)
+    clf_b.fit(X_train, y_train.ravel())
+    pred_b = clf_b.predict(X_test)
+    print(confusion_matrix(y_test, pred_b))
+    print(classification_report(y_test, pred_b))
+
+# Diminishing returns on improved accuracy after 50 estimators.
+
+#Now doing the same with Random Forest Regression:
+est_list = [10, 25, 50, 100, 200]
+
+
+for i in est_list:
+    clf_rf = RandomForestClassifier(n_estimators=i, random_state=314)
+    clf_rf.fit(X_train, y_train.ravel())
+    pred_rf = clf_rf.predict(X_test)
+    print(confusion_matrix(y_test, pred_rf))
+    print(classification_report(y_test, pred_rf))
+
+
+# Now XGBoost
+est_list = [10, 25, 50, 100, 200]
+
+
+for i in est_list:
+    clf_xg = XGBClassifier(n_estimators=i, random_state=314)
+    clf_xg.fit(X_train, y_train.ravel())
+    pred_xg = clf_xg.predict(X_test)
+    print(confusion_matrix(y_test, pred_xg))
+    print(classification_report(y_test, pred_xg))
+
+#XGBoost saw diminishing returns on improved accuracy after 50 estimators
